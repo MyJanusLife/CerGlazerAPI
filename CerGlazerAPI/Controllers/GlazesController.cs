@@ -1,4 +1,6 @@
-﻿using CerGlazerAPI.Models;
+﻿using CerGlazerAPI.Filters;
+using CerGlazerAPI.Models;
+using CerGlazerAPI.Models.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CerGlazerAPI.Controllers
@@ -9,12 +11,12 @@ namespace CerGlazerAPI.Controllers
     {
         private readonly ILogger<GlazesController> _logger;
 
-        private readonly List<Glaze> _glazes = new List<Glaze>
-        {
-            new Glaze { Id = 1, Name = "Glaze1", IdealConeCategory = "Low" },
-            new Glaze { Id = 2, Name = "Glaze2", IdealConeCategory = "Medium" },
-            new Glaze { Id = 3, Name = "Glaze3", IdealConeCategory = "High" }
-        };
+        //private readonly List<Glaze> _glazes = new List<Glaze>
+        //{
+        //    new Glaze { Id = 1, Name = "Glaze1", IdealConeCategory = "Low" },
+        //    new Glaze { Id = 2, Name = "Glaze2", IdealConeCategory = "Medium" },
+        //    new Glaze { Id = 3, Name = "Glaze3", IdealConeCategory = "High" }
+        //};
 
         public GlazesController(ILogger<GlazesController> logger)
         {
@@ -29,12 +31,13 @@ namespace CerGlazerAPI.Controllers
         }
 
         [HttpGet("{id}")]
+        [Glaze_ValidateGlazeIdFilterAttribute]
         public IActionResult GetGlazeById(int id)
         {
-            var shirt = _glazes.FirstOrDefault(g => g.Id == id) ??
-                new Glaze { Id = 0, Name = "Not Found", IdealConeCategory = "N/A" };
+            //var glaze = _glazes.FirstOrDefault(g => g.Id == id) ??
+            //    new Glaze { Id = 0, Name = "Not Found", IdealConeCategory = "N/A" };
 
-            return Ok(shirt);
+            return Ok(GlazeRepository.GetGlazeById(id));
         }
 
         [HttpPost]
