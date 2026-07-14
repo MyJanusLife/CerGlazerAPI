@@ -7,6 +7,8 @@ namespace CerGlazerAPI.Services
     {
         Task<User?> RegisterUserAsync(UserDTO registrationRequest);
 
-        Task<string?> LoginUserAsync(UserDTO loginRequest);
+        Task<TokenResponseDto?> LoginUserAsync(UserDTO loginRequest);
+
+        Task<TokenResponseDto?> RefreshTokensAsync(RefreshTokenRequestDto refreshTokenRequest);
     }
 }

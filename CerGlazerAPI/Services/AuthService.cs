@@ -6,14 +6,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace CerGlazerAPI.Services
 {
-    public class AuthService(UserDbContext context, IConfiguration appConfiguration) 
+    public class AuthService(UserDbContext context, IConfiguration appConfiguration)
         : IAuthService
     {
-        public Task<string?> LoginUserAsync(UserDTO userLoginRequest)
+
+        public async Task<TokenResponseDto?> LoginUserAsync(UserDTO userLoginRequest)
         {
             var user = context.Users.FirstOrDefault(u => u.UserName.ToLower() == userLoginRequest.UserName.ToLower());
 
@@ -22,15 +24,25 @@ namespace CerGlazerAPI.Services
                     == PasswordVerificationResult.Failed)
             {
                 return null;
-            };
+            }
+            ;
+             
+            return await CreateTokenResponse(user);
+        }
 
-            return Task.FromResult<string?>(GenerateToken(user));
+        private async Task<TokenResponseDto> CreateTokenResponse(User user)
+        {
+            return new TokenResponseDto
+            {
+                AccessToken = GenerateToken(user),
+                RefreshToken = await GenerateAndSaveRefreshTokenAsync(user) ?? string.Empty
+            };
         }
 
         public async Task<User?> RegisterUserAsync(UserDTO userRegistrationRequest)
         {
             // Verify that user does not already exist in the database.
-            if (await context.Users.AnyAsync(u => u.UserName.ToLower() 
+            if (await context.Users.AnyAsync(u => u.UserName.ToLower()
                 == userRegistrationRequest.UserName.ToLower()))
             {
                 return null; // User already exists
@@ -58,6 +70,26 @@ namespace CerGlazerAPI.Services
             return user;
         }
 
+        private async Task<string?> GenerateAndSaveRefreshTokenAsync(User user)
+        {
+            var refreshToken = GenerateRefreshToken();
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7); // Set refresh token expiry time
+            await context.SaveChangesAsync();
+            return refreshToken;
+        }
+
+        private async Task<User?> ValidateRefreshTokenAsync(Guid userId, string refreshToken)
+        {
+            var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime < DateTime.UtcNow)
+            {
+                return null; // Invalid or expired refresh token
+            }
+            return user; // Valid refresh token
+        }
+
         private string GenerateToken(User user)
         {
             // Implement your token generation logic here
@@ -83,6 +115,30 @@ namespace CerGlazerAPI.Services
             );
 
             return new JwtSecurityTokenHandler().WriteToken(tokenDescriptor);
+        }
+
+
+        private string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomNumber);
+                return Convert.ToBase64String(randomNumber);
+            }
+        }
+
+        public async Task<TokenResponseDto?> RefreshTokensAsync(RefreshTokenRequestDto refreshTokenRequest)
+        {
+            var user = await ValidateRefreshTokenAsync(refreshTokenRequest.UserId, refreshTokenRequest.RefreshToken);
+
+            if (user == null)
+            {
+                return null;
+            }
+
+            return await CreateTokenResponse(user);
         }
     }
 }

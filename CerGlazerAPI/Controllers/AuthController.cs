@@ -19,16 +19,16 @@ namespace CerGlazerAPI.Controllers
         public static User user = new();
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] UserDTO userLoginRequest)
+        public async Task<ActionResult<TokenResponseDto>> Login([FromBody] UserDTO userLoginRequest)
         {
-            var token = await authService.LoginUserAsync(userLoginRequest);
+            var result = await authService.LoginUserAsync(userLoginRequest);
 
-            if (token == null) 
+            if (result == null) 
             { 
                 return BadRequest(new { Message = "Incorrect user name or password." });
             }  
 
-            return Ok(token);
+            return Ok(result);
         }
 
         [HttpPost("register")]
@@ -45,7 +45,22 @@ namespace CerGlazerAPI.Controllers
             return Ok(String.Concat(user.UserName," succesfully registered."));
         }
 
-        [Authorize]
+        [HttpPost("refresh-token")]
+        public async Task<ActionResult<TokenResponseDto>> RefreshToken([FromBody] RefreshTokenRequestDto tokenRefreshRequest)
+        {
+            var result = await authService.RefreshTokensAsync(tokenRefreshRequest);
+
+            if (result is null ||
+                result.AccessToken is null ||
+                result.RefreshToken is null)
+            {
+                return Unauthorized(new { Message = "Invalid refresh token." });
+            }
+
+            return Ok(result);
+        }
+
+            [Authorize]
         [HttpGet]
         public async Task<IActionResult> AuthenticatedEndPoint()
         {         
