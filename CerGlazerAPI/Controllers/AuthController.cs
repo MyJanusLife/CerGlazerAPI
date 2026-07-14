@@ -1,6 +1,7 @@
 ﻿using CerGlazerAPI.Entities;
 using CerGlazerAPI.Models;
 using CerGlazerAPI.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -42,6 +43,13 @@ namespace CerGlazerAPI.Controllers
             }
 
             return Ok(String.Concat(user.UserName," succesfully registered."));
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> AuthenticatedEndPoint()
+        {         
+            return Ok("Success authenticated connection.");
         }
     }
 }

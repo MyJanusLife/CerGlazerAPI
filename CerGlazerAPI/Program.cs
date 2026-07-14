@@ -1,5 +1,6 @@
 using CerGlazerAPI.Data;
 using CerGlazerAPI.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +13,26 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<UserDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("CerGlazerEFDb") ?? 
     throw new InvalidOperationException("Connection string 'CerGlazerAPIContext' not found.")));
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["AuthSettings:Issuer"],
+            ValidAudience = builder.Configuration["AuthSettings:Audience"],
+            IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
+                System.Text.Encoding.UTF8.GetBytes(builder.Configuration["AuthSettings:Token"]!))
+
+            //IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
+            //    System.Text.Encoding.UTF8.GetBytes(builder.Configuration["AuthSettings:Token"] ??
+            //    throw new InvalidOperationException("JWT Key not found in configuration.")))
+        };
+    });
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 
@@ -26,6 +47,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthorization();
 
 app.MapControllers();
 
