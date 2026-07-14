@@ -51,5 +51,12 @@ namespace CerGlazerAPI.Controllers
         {         
             return Ok("Success authenticated connection.");
         }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("Admin")]
+        public async Task<IActionResult> AdminOnlyEndPoint()
+        {
+            return Ok("Admin access granted.");
+        }
     }
 }

@@ -65,7 +65,8 @@ namespace CerGlazerAPI.Services
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Role, user.UserRole)
             };
 
             var key = new SymmetricSecurityKey(
