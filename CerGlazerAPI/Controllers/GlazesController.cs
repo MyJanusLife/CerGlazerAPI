@@ -31,7 +31,7 @@ namespace CerGlazerAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        [Glaze_ValidateGlazeIdFilterAttribute]
+        [Glaze_ValidateGlazeIdFilter]
         public IActionResult GetGlazeById(int id)
         {
             //var glaze = _glazes.FirstOrDefault(g => g.Id == id) ??
